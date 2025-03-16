@@ -1,11 +1,152 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import Aside from '../components/Aside.astro';
+import Content from '../components/Content.astro';
+
+import Fuse from 'fuse.js'
+
+// For performance reasons
+// @ts-ignore
+import json from '../../public/process.json';
+
+const { searchParams } = new URL(Astro.request.url);
+let query = searchParams.get('query') ?? '';
+
+interface BFRESItem {
+  key: string;
+  value: {
+    Model: string;
+    Materials: MaterialGroup[];
+  };
+}
+
+interface MaterialGroup {
+  [key: string]: string[] | number[];
+  "Possible Skin Counts": number[];
+}
+
+const materialVariables = {
+  Alb:      'true' == searchParams.get('Alb'),
+  Nrm:      'true' == searchParams.get('Nrm'),
+  Spm:      'true' == searchParams.get('Spm'),
+  Emc:      'true' == searchParams.get('Emc'),
+  Emm:      'true' == searchParams.get('Emm'),
+  EmmMsk:   'true' == searchParams.get('EmmMsk'),
+  Gn0:      'true' == searchParams.get('Gn0'),
+  Gn1:      'true' == searchParams.get('Gn1'),
+  Gn2:      'true' == searchParams.get('Gn2'),
+  Gn3:      'true' == searchParams.get('Gn3'),
+  Gn4:      'true' == searchParams.get('Gn4'),
+  Gn5:      'true' == searchParams.get('Gn5'),
+  AO:       'true' == searchParams.get('AO'),
+  Ind:      'true' == searchParams.get('Ind')
+};
+
+const skinCount = 0
+
+function filterItems(
+  items: BFRESItem[],
+  textureFilters: Record<string, boolean>,
+  skinCount?: number
+): BFRESItem[] {
+  // Get active material filters
+  const activeTextures = Object.entries(textureFilters)
+    .filter(([_, isActive]) => isActive)
+    .map(([material]) => material);
+  const hasTextureFilter = activeTextures.length > 0;
+
+  return items.filter(item => {
+    // Check material condition
+    let materialMatch = !hasTextureFilter;
+    if (hasTextureFilter) {
+      materialMatch = item.value.Materials.some(materialGroup => {
+        return Object.keys(materialGroup).some(key => {
+          if (key === "Possible Skin Counts") return false;
+          const materials = materialGroup[key] as string[];
+          return materials.some(material => 
+            activeTextures.some(m => material.includes(m))
+          );
+        });
+      });
+    }
+
+    // Check skin count condition
+    let skinCountMatch = skinCount === undefined;
+    if (skinCount !== undefined) {
+      skinCountMatch = item.value.Materials.some(materialGroup => {
+        const counts = materialGroup["Possible Skin Counts"];
+        return counts.includes(skinCount);
+      });
+    }
+
+    return materialMatch && skinCountMatch;
+  });
+}
+
+// Filter for items with Alb material and skin count 2
+const filteredItems = filterItems(json, materialVariables, 0);
+
+interface ExtractedMaterial {
+  bfresKey: string;
+  materialGroup: string;
+  textures: string[];
+}
+
+function extractMaterialDetails(filteredItems: BFRESItem[]): ExtractedMaterial[] {
+  return filteredItems.flatMap(item => 
+    item.value.Materials.flatMap(materialGroup => {
+      // Extract all material entries except "Possible Skin Counts"
+      return Object.entries(materialGroup)
+        .filter(([key]) => key !== "Possible Skin Counts")
+        .map(([materialGroupName, textures]) => ({
+          bfresKey: item.key,
+          materialGroup: materialGroupName,
+          textures: textures as string[]
+        }));
+    })
+  );
+}
+
+// Example usage:
+const materialDetails = extractMaterialDetails(filteredItems);
+// console.log(materialDetails);
+
+let fuseOptions = {
+    // isCaseSensitive: false,
+    includeScore: true,
+    // ignoreDiacritics: false,
+    // shouldSort: true,
+    // includeMatches: false,
+    // findAllMatches: false,
+    // minMatchCharLength: 1,
+    // location: 0,
+    threshold: 0.4,
+    distance: 200,
+    // useExtendedSearch: false,
+    // ignoreLocation: false,
+    // ignoreFieldNorm: false,
+    // fieldNormWeight: 1,
+    keys: [
+        "materialGroup",
+        "bfresKey",
+        // "textures",
+    ]
+};
+
+if (query === '') {
+    fuseOptions.threshold = 1
+    query = 'a'
+}
+
+const fuse = new Fuse(materialDetails, fuseOptions);
+const data = fuse.search(query)
+
 
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
 <Layout>
-	<Welcome />
+	<Aside data={data}></Aside>
+	<Content data={data}></Content>
 </Layout>

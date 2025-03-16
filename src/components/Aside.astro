@@ -1,0 +1,97 @@
+---
+import FilterOptions from '../components/FilterOptions.svelte'
+import ActiveItemInfo from './ActiveItemInfo.svelte';
+import M3Button from './M3Button.astro'
+import Searchbar from './Searchbar.astro'
+
+let { data } = Astro.props;
+---
+
+<script>
+    import { materialFilter } from '../mainStore.ts'
+
+    function doTheSearch(event: MouseEvent) {
+        (event.target as HTMLButtonElement).disabled = true
+        const searchParams = new URLSearchParams(location.search)
+        searchParams.set('query', (document.querySelector('#searchbar') as HTMLInputElement).value)
+
+        searchParams.set('Alb', String(materialFilter.get().Alb))
+        searchParams.set('Nrm', String(materialFilter.get().Nrm))
+        searchParams.set('Spm', String(materialFilter.get().Spm))
+        searchParams.set('Emc', String(materialFilter.get().Emc))
+        searchParams.set('Emm', String(materialFilter.get().Emm))
+        searchParams.set('EmmMsk', String(materialFilter.get().EmmMsk))
+        searchParams.set('Gn0', String(materialFilter.get().Gn0))
+        searchParams.set('Gn1', String(materialFilter.get().Gn1))
+        searchParams.set('Gn2', String(materialFilter.get().Gn2))
+        searchParams.set('Gn3', String(materialFilter.get().Gn3))
+        searchParams.set('Gn4', String(materialFilter.get().Gn4))
+        searchParams.set('Gn5', String(materialFilter.get().Gn5))
+        searchParams.set('AO', String(materialFilter.get().AO))
+        searchParams.set('Ind', String(materialFilter.get().Ind))
+        location.search = searchParams.toString()
+    }
+    
+    const searchParams = new URLSearchParams(location.search)
+    let conv = materialFilter.get()
+    conv.Alb =      'true' === searchParams.get('Alb');
+    conv.Nrm =      'true' === searchParams.get('Nrm');
+    conv.Spm =      'true' === searchParams.get('Spm');
+    conv.Emc =      'true' === searchParams.get('Emc');
+    conv.Emm =      'true' === searchParams.get('Emm');
+    conv.EmmMsk =   'true' === searchParams.get('EmmMsk');
+    conv.Gn0 =      'true' === searchParams.get('Gn0');
+    conv.Gn1 =      'true' === searchParams.get('Gn1');
+    conv.Gn2 =      'true' === searchParams.get('Gn2');
+    conv.Gn3 =      'true' === searchParams.get('Gn3');
+    conv.Gn4 =      'true' === searchParams.get('Gn4');
+    conv.Gn5 =      'true' === searchParams.get('Gn5');
+    conv.AO =       'true' === searchParams.get('AO');
+    conv.Ind =      'true' === searchParams.get('Ind');
+
+    (document.querySelector('#searchBtn') as HTMLButtonElement)
+        .addEventListener('click', doTheSearch)
+</script>
+
+<aside>
+    <Searchbar />
+    <FilterOptions client:load search={Astro.url.search} />
+    <M3Button id="searchBtn">Search</M3Button>
+    <ActiveItemInfo client:load data={data} />
+</aside>
+
+<style>
+    aside {
+        background-color: var(--md-sys-color-surface);
+        padding: 12px;
+        border-radius: 16px;
+        display: flex;
+        box-sizing: border-box;
+        /* min-width: fit-content; */
+        width: 40vw;
+        max-width: 300px;
+
+        position: relative;
+        flex-direction: column;
+
+        flex-grow: 0;
+
+        gap: 12px;
+    }
+
+    @media only screen and (max-width: 600px) {
+        aside {
+            width: 100%;
+            max-width: none;
+            height: 400px;
+            flex-direction: column;
+            align-items: stretch;
+            overflow-y: auto;
+        }
+    }
+
+    #searchBtn {
+        --buttonBackground: var(--md-sys-color-primary);
+        --buttonForeground: var(--md-sys-color-on-primary)
+    }
+</style>

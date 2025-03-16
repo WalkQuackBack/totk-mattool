@@ -1,0 +1,55 @@
+---
+const { ...attrs } = Astro.props;
+---
+
+<button {...attrs}>
+    <slot />
+</button>
+
+<style>
+    button {
+        font-family: inherit;
+        font-weight: 500;
+        border: none;
+        border-radius: 9999px;
+        padding-block-end: 10px;
+        padding-block-start: 10px;
+        padding-inline-end: 24px;
+        padding-inline-start: 24px;
+        font-size: 14px;
+        height: 40px;
+
+        position: relative;
+        &:not(:disabled) {
+            cursor: pointer;
+            background-color: var(--buttonBackground, var(--md-sys-color-secondary-container));
+            color: var(--buttonForeground, var(--md-sys-color-on-secondary-container));
+            &:hover::after {
+                opacity: var(--md-sys-state-opacity-hover);
+            }
+
+            &:active::after {
+                opacity: var(--md-sys-state-opacity-pressed);
+            }
+        }
+
+        &:disabled {
+            background-color: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-outline)
+        }
+
+        &::after {
+            border-radius: inherit;
+            content: "";
+            inset: 0px;
+            pointer-events: none;
+            position: absolute;
+    
+            background: currentColor;
+            opacity: 0;
+
+            transition: opacity 50ms linear;
+            z-index: 1;
+        }
+    }
+</style>

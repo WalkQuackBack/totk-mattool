@@ -1,0 +1,36 @@
+---
+import MainList from './MainList.svelte'
+
+let { data } = Astro.props;
+---
+
+<main>
+    <noscript>JavaScript is required for the use of this application.</noscript>
+    <MainList client:only="svelte" data={data}>
+        <span class="fallback" slot="fallback">
+          Loading...
+        </span>
+    </MainList>
+</main>
+
+<style>
+    main {
+        display: flex;
+        flex-grow: 1;
+        flex-shrink: 1;
+
+        flex-direction: column;
+        gap: 8px;
+
+        background-color: var(--md-sys-color-surface);
+        padding: 12px;
+        border-radius: 16px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    /* Workaround for Astro issue #12513 */
+    .fallback:has(+ *:not(template)) {
+        display: none;
+    }
+</style>
